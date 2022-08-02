@@ -58,6 +58,7 @@ function readPackFile(filePath, file, callback) {
             offset += 4;
             numAssets = readUInt32BE(fd, offset);
             offset += 4;
+            console.warn('next offset pos:', nextOffset, 'assets count is :', numAssets);
             for (i=0;i<numAssets;i++) {
                 asset = {};
                 asset.file = file;
@@ -631,3 +632,4 @@ exports.extractFile = extractFile;
 exports.diff = diff;
 exports.append = append;
 exports.manifest = manifest;
+exports.readPackFile = readPackFile;

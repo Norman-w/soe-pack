@@ -66,6 +66,36 @@ switch (mode) {
             outFile = process.argv[5];
         packer.append(inFile1, inFile2, outFile);
         break;
+    case "check":
+        //region check the file white space
+        var infFilePath = process.argv[3];
+            packName = process.argv[4];
+        packer.readPackFile(infFilePath, packName,
+            (err,assets)=>
+            {
+                if (err)
+                {
+                    console.error('read assets error', err);
+                    return;
+                }
+                let asc = function (a,b)
+                {
+                    return a["offset"] > b["offset"]? 1:-1;
+                }
+                assets.sort(asc);
+                let lastEnd = 0;
+                console.log('Total assets count:', assets.length);
+                for (let i = 0; i < assets.length; i++) {
+                    let current = assets[i];
+                    let currentStart = current.offset;
+                    let currentEnd = current.offset + current.length;
+                    console.log('Start:', currentStart, "End:", currentEnd, "Empty:", currentStart-lastEnd);
+                    lastEnd = currentEnd;
+                }
+            }
+        );
+        //endregion
+        break;
     default:
         console.log("Usage: node packer.js <mode> ...");
 }
