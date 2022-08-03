@@ -5,7 +5,7 @@ var path = require("path"),
     excludeFiles = ["Assets_256.pack"];
 
 switch (mode) {
-    case "pack": 
+    case "pack":
         var inPath = process.argv[3],
             outPath = process.argv[4];
         if (!outPath) {
@@ -15,7 +15,7 @@ switch (mode) {
         packer.pack(inPath, outPath);
         console.log("Done!");
         break;
-    case "manifest": 
+    case "manifest":
         var inPath = process.argv[3],
             outFile = process.argv[4];
         if (!outFile) {
@@ -23,7 +23,7 @@ switch (mode) {
         }
         packer.manifest(inPath, outFile, excludeFiles);
         break;
-    case "diff": 
+    case "diff":
         var oldManifest = process.argv[3],
             newManifest = process.argv[4],
             outFile = process.argv[5];
@@ -32,35 +32,35 @@ switch (mode) {
         }
         packer.diff(oldManifest, newManifest, outFile);
         break;
-    case "extractall": 
+    case "extractall":
         var inPath = process.argv[3],
             outPath = process.argv[4];
         packer.extractAll(inPath, outPath, excludeFiles);
         break;
-    case "extractpack": 
+    case "extractpack":
         var inPath = process.argv[3],
             outPath = process.argv[4];
         packer.extractPack(inPath, outPath, excludeFiles);
         break;
-    case "extractdiff": 
+    case "extractdiff":
         var diffPath = process.argv[3],
             packPath = process.argv[4],
             outPath = process.argv[5];
         packer.extractDiff(diffPath, packPath, outPath, excludeFiles);
         break;
-    case "extract": 
+    case "extract":
         var inPath = process.argv[3],
             file = process.argv[4],
             outPath = process.argv[5];
         packer.extractFile(inPath, file, outPath, excludeFiles);
         break;
-    case "extractregexp": 
+    case "extractregexp":
         var inPath = process.argv[3],
             file = process.argv[4],
             outPath = process.argv[5];
         packer.extractFile(inPath, file, outPath, excludeFiles, true);
         break;
-    case "append": 
+    case "append":
         var inFile1 = process.argv[3],
             inFile2 = process.argv[4],
             outFile = process.argv[5];
@@ -70,32 +70,17 @@ switch (mode) {
         //region check the file white space
         var infFilePath = process.argv[3];
             packName = process.argv[4];
-        packer.readPackFile(infFilePath, packName,
-            (err,assets)=>
+        packer.check(infFilePath,
+          (err,assets)=>
             {
-                if (err)
-                {
-                    console.error('read assets error', err);
-                    return;
-                }
-                let asc = function (a,b)
-                {
-                    return a["offset"] > b["offset"]? 1:-1;
-                }
-                assets.sort(asc);
-                let lastEnd = 0;
-                console.log('Total assets count:', assets.length);
-                for (let i = 0; i < assets.length; i++) {
-                    let current = assets[i];
-                    let currentStart = current.offset;
-                    let currentEnd = Number(current.offset + current.length);
-                    console.log('Start:', currentStart.toString(16), "End:", currentEnd.toString(16), "Empty:", currentStart-lastEnd);
-                    lastEnd = currentEnd;
-                }
             }
         );
         //endregion
         break;
+  case "checkAll":
+    var packsFileBasePath = process.argv[3];
+    packer.checkAll(packsFileBasePath);
+    break;
     default:
         console.log("Usage: node packer.js <mode> ...");
 }

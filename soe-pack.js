@@ -129,28 +129,28 @@ function append(inFile1, inFile2, outFile) {
         nextOffset = 0, nextAppendOffset;
 
     console.log("Appending " + data2.length + " bytes to " + inFile1);
-    
+
     data1.copy(outData, 0, 0, data1.length);
     data2.copy(outData, data1.length, 0, data2.length);
-    
+
     do {
         offset = nextOffset;
         nextOffset = data1.readUInt32BE(offset);
     } while (nextOffset);
-    
+
     appendOffset = data1.length;
     outData.writeUInt32BE(appendOffset, offset);
-    
+
     console.log("Rewriting offsets");
     offset = 0;
     do {
         nextOffset = data2.readUInt32BE(offset);
         outData.writeUInt32BE(nextOffset ? appendOffset + nextOffset : 0, appendOffset + offset);
         offset += 4;
-        
+
         numAssets = data2.readUInt32BE(offset);
         offset += 4;
-        
+
         for (i=0;i<numAssets;i++) {
             offset += data2.readUInt32BE(offset) + 4;
             outData.writeUInt32BE(appendOffset + data2.readUInt32BE(offset), appendOffset + offset);
@@ -164,8 +164,8 @@ function append(inFile1, inFile2, outFile) {
 
 function manifest(inPath, outFile, excludeFiles) {
     var files, file, ext, str,
-        i, j, packAssets, 
-        assets = [], 
+        i, j, packAssets,
+        assets = [],
         asset;
 
     files = listPackFiles(inPath, excludeFiles);
@@ -207,7 +207,7 @@ function readManifest(file) {
 
     var data = fs.readFileSync(file).toString(),
         lines = data.split("\r\n"),
-        values, 
+        values,
         assets = {};
     for (var i=1;i<lines.length;i++) {
         values = lines[i].split("\t");
@@ -259,7 +259,7 @@ function diff(oldManifestPath, newManifestPath, outFile) {
             }
         }
     }
-    
+
     console.log("Writing manifest changes to " + outFile);
     fs.writeFileSync(outFile, JSON.stringify(changes, null, 4));
 }
@@ -273,7 +273,7 @@ function pack(inPath, outPath) {
         fileOffset, dataOffset, data,
         fileHeaderLength, dataLength,
         folders, collections = [], collectionFolder;
-    
+
     if (!fs.existsSync(inPath)) {
         throw "pack(): inPath does not exist [" + inPath + "]";
     }
@@ -284,7 +284,7 @@ function pack(inPath, outPath) {
             throw "pack(): outPath is a directory [" + outPath + "]";
         }
     }
-    
+
     folders = fs.readdirSync(inPath);
     for (i=0;i<folders.length;i++) {
         collectionFolder = path.join(inPath, folders[i]);
@@ -308,14 +308,14 @@ function pack(inPath, outPath) {
             stat = fs.statSync(path.join(collectionFolder, files[j]));
             dataLength += stat.size;
         }
-            
+
         folderHeaderBuffer = new Buffer(8);
         fileDataBuffer = new Buffer(dataLength);
         fileHeaderBuffer = new Buffer(fileHeaderLength);
 
         fileOffset = 0;
         dataOffset = 0;
-            
+
         for (j=0;j<files.length;j++) {
             data = fs.readFileSync(path.join(collectionFolder, files[j]));
 
@@ -330,13 +330,13 @@ function pack(inPath, outPath) {
             data.copy(fileDataBuffer, dataOffset, 0);
             dataOffset += data.length;
         }
-            
+
         if (i < collections.length-1) {
             nextOffset = packBuffer.length + folderHeaderBuffer.length + fileHeaderBuffer.length + fileDataBuffer.length;
         } else {
             nextOffset = 0;
         }
-        
+
         folderHeaderBuffer.writeUInt32BE(nextOffset, 0);
         folderHeaderBuffer.writeUInt32BE(files.length, 4);
 
@@ -354,7 +354,7 @@ function packFromBuffers(files) {
         i, j, nextOffset, stat,
         fileOffset, dataOffset, data,
         fileHeaderLength, dataLength, nameLength;
-    
+
     fileHeaderLength = 0;
     dataLength = 0;
 
@@ -362,14 +362,14 @@ function packFromBuffers(files) {
         fileHeaderLength += 16 + files[j].name.length;
         dataLength += files[j].data.length;
     }
-        
+
     folderHeaderBuffer = new Buffer(8);
     fileDataBuffer = new Buffer(dataLength);
     fileHeaderBuffer = new Buffer(fileHeaderLength);
 
     fileOffset = 0;
     dataOffset = 0;
-        
+
     for (j=0;j<files.length;j++) {
         data = files[j].data;
         nameLength = files[j].name.length;
@@ -385,7 +385,7 @@ function packFromBuffers(files) {
         dataOffset += data.length;
     }
     nextOffset = 0;
-    
+
     folderHeaderBuffer.writeUInt32BE(nextOffset, 0);
     folderHeaderBuffer.writeUInt32BE(files.length, 4);
 
@@ -407,10 +407,10 @@ function extractDiff(diffPath, packPath, outPath, excludeFiles) {
     if (!fs.existsSync(diffPath)) {
         throw "extractDiff(): diffPath does not exist";
     }
-    
+
     var packs = {},
         packStack = [];
-    
+
     function openPack(file, callback) {
         if (packs[file]) {
             callback(null, packs[file]);
@@ -435,7 +435,7 @@ function extractDiff(diffPath, packPath, outPath, excludeFiles) {
             }
         });
     }
-    
+
     function extractAssets(assets, outPath, callback) {
         fs.mkdir(outPath, function(err) {
             function nextAsset() {
@@ -461,7 +461,7 @@ function extractDiff(diffPath, packPath, outPath, excludeFiles) {
         });
     }
 
-    
+
     function closePacks(callback) {
         if (packStack.length) {
             var pack = packStack.shift(),
@@ -479,7 +479,7 @@ function extractDiff(diffPath, packPath, outPath, excludeFiles) {
             callback();
         }
     }
-    
+
     console.log("Reading diff: " + diffPath);
     fs.readFile(diffPath, function(err, data) {
         if (err) {
@@ -504,9 +504,9 @@ function extractAll(inPath, outPath, excludeFiles) {
     if (!fs.existsSync(outPath)) {
         throw "extractAll(): outPath does not exist";
     }
-    
+
     console.log("Reading pack files in " + inPath);
-    
+
     function nextPack() {
         if (!packs.length) {
             console.log("Extracted " + totalAssets + " assets in " + ((Date.now() - startTime) / 1000).toFixed(2) + " seconds.");
@@ -526,7 +526,7 @@ function extractAll(inPath, outPath, excludeFiles) {
             fs.readFile(path.join(inPath, pack), function(err, data) {
                 for (var i=0;i<assets.length;i++) {
                     asset = assets[i];
-                    fs.writeFile(path.join(packPath, asset.name), data.slice(asset.offset, asset.offset+asset.length), 
+                    fs.writeFile(path.join(packPath, asset.name), data.slice(asset.offset, asset.offset+asset.length),
                         function() {
                             totalAssets++;
                             if (--n === 0) {
@@ -547,9 +547,9 @@ function extractPack(inPath, outPath) {
     if (!fs.existsSync(outPath)) {
         throw "extractPack(): outPath does not exist";
     }
-    
+
     //console.log("Reading pack file: " + inPath);
-    
+
     readPackFile("", inPath, function(err, assets) {
         //console.log("Extracting " + assets.length + " assets from pack file");
         var asset, n = assets.length;
@@ -622,6 +622,127 @@ function extractFile(inPath, file, outPath, excludeFiles, useRegExp, callback) {
     nextPack();
 }
 
+function check(fileFullPath, callback) {
+  var assets = [], asset,
+    fd, i, offset = 0,
+    numAssets, nextOffset;
+
+  // filePath = path.join(filePath, file);
+  fs.open(fileFullPath, "r", function(err, fd) {
+    do {
+      nextOffset = readUInt32BE(fd, offset);
+      var nextOffsetHex = nextOffset.toString(16);
+      offset += 4;
+      numAssets = readUInt32BE(fd, offset);
+      var numAssetsHex = numAssets.toString(16);
+      offset += 4;
+      console.warn('next offset pos:', nextOffset, 'assets count is :', numAssets);
+      for (i=0;i<numAssets;i++) {
+        asset = {};
+        // asset.file = file;
+        asset.name = readString(fd, offset);
+        asset.name_lower = asset.name.toLowerCase();
+        offset += asset.name.length + 4;
+        asset.offset = readUInt32BE(fd, offset);
+        offset += 4;
+        asset.length = readUInt32BE(fd, offset);
+        offset += 4;
+        asset.crc32 = readUInt32BE(fd, offset);
+        offset += 4;
+        assets.push(asset);
+      }
+      offset = nextOffset;
+    } while (nextOffset);
+
+
+    let asc = function (a,b)
+    {
+      return a["offset"] > b["offset"]? 1:-1;
+    }
+    assets.sort(asc);
+    let lastEnd = 0;
+    console.log('Total assets count:', assets.length);
+
+    for (let i = 0; i < assets.length; i++) {
+      //当前文件
+      let current = assets[i];
+      //当前文件开始
+      let currentStart = current.offset;
+      //当前文件结束
+      let currentEnd = Number(current.offset + current.length);
+      //该文件和上一个文件中间的空余空间长度
+      let emptyLength = currentStart - lastEnd;
+      //如果空出来长度了
+      if(emptyLength === 0)
+      {
+        continue;
+      }
+      //从空出来的地方 也就是上一个文件的结尾
+      let emptyFileStart = lastEnd;
+      //空出来的地方那个文件有多长
+      let emptyFileLength = currentStart - lastEnd;
+      //空出来的那个地方的那个文件的结尾处的索引,应该用不到.
+      let emptyFileEnd = currentStart-1;
+      //从空出来的地方读取4个,猜测一下格式
+      let extLen = 4;
+      var buf = new Buffer(extLen);
+      fs.readSync(fd, buf, 0, extLen, emptyFileStart);
+      let guessFileExtName = buf.toString();
+      // console.log(guessFileExtName);
+      //读取空文件长度的字符,保存起来
+      let emptySpaceBuf = new Buffer(emptyFileLength);
+      fs.readSync(fd,emptySpaceBuf, 0, emptyFileLength, emptyFileStart);
+
+      if (guessFileExtName.toLowerCase().substr(0,3) !== '<ac')
+      {
+        lastEnd = currentEnd;
+        continue;
+      }
+
+      var packFilePath = path.dirname(fileFullPath);
+      var packFileName = path.basename(fileFullPath);
+      var packExtPos = packFileName.indexOf(".pack");
+      packFileName = packFileName.substring(0,packExtPos);
+      var ddsDestPath = path.join(packFilePath, packFileName);
+      var ddsDestFullPath  =  path.join(ddsDestPath, packFileName + '_' + i+'.adr');
+      if (!fs.existsSync(ddsDestPath)) {
+        fs.mkdirSync(ddsDestPath);
+      }
+
+      fs.writeFileSync(ddsDestFullPath,
+        emptySpaceBuf
+      );
+
+
+      console.log(
+        "此文件前空余处文件类型", guessFileExtName,
+        "此文件前空余空间共:", emptyLength,
+        emptyLength.toString(16),
+        '\t || \t此文件开始:', currentStart.toString(16),
+        "此文件结束:", currentEnd.toString(16),
+        "\t\t" +current.name
+      );
+      lastEnd = currentEnd;
+    }
+
+
+    fs.close(fd, function(err) {
+      callback(err, assets);
+    });
+  });
+}
+
+function checkAll(packsFileBasePath)
+{
+  let files = listPackFiles(packsFileBasePath, null);
+  for (let i = 0; i < files.length; i++) {
+    let current = path.join(packsFileBasePath, files[i]);
+    check(current, ()=>{
+      console.log('解析第'+ (i+1)+ '个文件完成');
+    })
+  }
+}
+
 exports.pack = pack;
 exports.packFromBuffers = packFromBuffers;
 exports.extractAll = extractAll;
@@ -632,4 +753,5 @@ exports.extractFile = extractFile;
 exports.diff = diff;
 exports.append = append;
 exports.manifest = manifest;
-exports.readPackFile = readPackFile;
+exports.check = check;
+exports.checkAll = checkAll;
