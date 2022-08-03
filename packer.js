@@ -88,8 +88,8 @@ switch (mode) {
                 for (let i = 0; i < assets.length; i++) {
                     let current = assets[i];
                     let currentStart = current.offset;
-                    let currentEnd = current.offset + current.length;
-                    console.log('Start:', currentStart, "End:", currentEnd, "Empty:", currentStart-lastEnd);
+                    let currentEnd = Number(current.offset + current.length);
+                    console.log('Start:', currentStart.toString(16), "End:", currentEnd.toString(16), "Empty:", currentStart-lastEnd);
                     lastEnd = currentEnd;
                 }
             }
