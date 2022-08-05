@@ -622,6 +622,23 @@ function extractFile(inPath, file, outPath, excludeFiles, useRegExp, callback) {
     nextPack();
 }
 
+/*
+开头的4字节表示游戏读取文件名时候的基地址.
+接下来的4字节表示当前文件中的资源数量
+
+然后开始循环
+
+4字节表示接下来的文件名的长度
+然后就是文件名,带扩展名
+接下来4字节是该包中,该资源的起始位置
+再接下来4字节是该资源的长度
+再接下来4字节是资源的crc32校验.如果crc32校验不对的话,加载资源会失败.本工具中的crc32是正确的,网上的不对.
+
+包文件不能太短(可能是) 基于031文件修改的话,把前面的都用11填充,然后用多少写多少,是可以用的.
+但是直接写一个比较小的3kb的文件里面只包含一个adr的话,是失败的.
+做好的包按照名字顺序放在资源目录 比如第一个自己做的包是Asset_256.pack
+游戏运行时候会自动加载新包
+* */
 function check(fileFullPath, callback) {
   var assets = [], asset,
     fd, i, offset = 0,
@@ -649,6 +666,17 @@ function check(fileFullPath, callback) {
         offset += 4;
         asset.crc32 = readUInt32BE(fd, offset);
         offset += 4;
+
+        //读取文件的buf
+        var buf = new Buffer(asset.length);
+        fs.readSync(fd, buf, 0, buf.length, asset.offset);
+        var checkCrc = crc32.unsigned(buf);
+        var bufStr = buf.toString();
+        if (checkCrc !== asset.crc32)
+        {
+          console.log('crc校验不一致')
+        }
+
         assets.push(asset);
       }
       offset = nextOffset;
@@ -693,25 +721,25 @@ function check(fileFullPath, callback) {
       let emptySpaceBuf = new Buffer(emptyFileLength);
       fs.readSync(fd,emptySpaceBuf, 0, emptyFileLength, emptyFileStart);
 
-      if (guessFileExtName.toLowerCase().substr(0,3) !== '<ac')
-      {
-        lastEnd = currentEnd;
-        continue;
-      }
-
-      var packFilePath = path.dirname(fileFullPath);
-      var packFileName = path.basename(fileFullPath);
-      var packExtPos = packFileName.indexOf(".pack");
-      packFileName = packFileName.substring(0,packExtPos);
-      var ddsDestPath = path.join(packFilePath, packFileName);
-      var ddsDestFullPath  =  path.join(ddsDestPath, packFileName + '_' + i+'.adr');
-      if (!fs.existsSync(ddsDestPath)) {
-        fs.mkdirSync(ddsDestPath);
-      }
-
-      fs.writeFileSync(ddsDestFullPath,
-        emptySpaceBuf
-      );
+      // if (guessFileExtName.toLowerCase().substr(0,3) !== '<ac')
+      // {
+      //   lastEnd = currentEnd;
+      //   continue;
+      // }
+      //
+      // var packFilePath = path.dirname(fileFullPath);
+      // var packFileName = path.basename(fileFullPath);
+      // var packExtPos = packFileName.indexOf(".pack");
+      // packFileName = packFileName.substring(0,packExtPos);
+      // var ddsDestPath = path.join(packFilePath, packFileName);
+      // var ddsDestFullPath  =  path.join(ddsDestPath, packFileName + '_' + i+'.adr');
+      // if (!fs.existsSync(ddsDestPath)) {
+      //   fs.mkdirSync(ddsDestPath);
+      // }
+      //
+      // fs.writeFileSync(ddsDestFullPath,
+      //   emptySpaceBuf
+      // );
 
 
       console.log(
